@@ -4,8 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from decimal import Decimal
-from django.db.models import DecimalField, Sum, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from .forms import CategoryForm, ItemForm
 from .models import Category, Item, Profile
@@ -28,28 +27,77 @@ CURRENCY_SYMBOLS = {
     'AUD': 'A$',
 }
 
+DEFAULT_CATEGORIES = [
+    'Electronics',
+    'Clothing',
+    'Furniture',
+    'Gaming',
+    'Appliances',
+    'Collectibles',
+    'Other',
+]
+
+
+def convert_amount(amount, source_currency, target_currency):
+    if amount is None:
+        return None
+
+    source_rate = CURRENCY_RATES.get(source_currency, Decimal('1.00'))
+    target_rate = CURRENCY_RATES.get(target_currency, Decimal('1.00'))
+
+    if source_rate == 0:
+        return amount
+
+    amount_in_usd = amount / source_rate
+    return amount_in_usd * target_rate
+
+
+def ensure_default_categories(user):
+    for category_name in DEFAULT_CATEGORIES:
+        if not Category.objects.filter(user=user, name__iexact=category_name).exists():
+            Category.objects.create(user=user, name=category_name)
+
 @login_required(login_url='/login/')
 def home(request):
     profile, _ = Profile.objects.get_or_create(user=request.user)
-    items = Item.objects.filter(user=request.user).select_related('category')
-    totals = items.aggregate(
-        total_purchase=Coalesce(Sum('purchase_price'), Value(0), output_field=DecimalField(max_digits=12, decimal_places=2)),
-        total_estimated=Coalesce(Sum('estimated_value'), Value(0), output_field=DecimalField(max_digits=12, decimal_places=2)),
-    )
+    ensure_default_categories(request.user)
 
-    total_purchase = totals['total_purchase']
-    total_estimated = totals['total_estimated']
-    total_gain_loss = total_estimated - total_purchase
+    query = request.GET.get('q', '').strip()
+    selected_sort = request.GET.get('sort', 'newest').strip()
+
+    items = Item.objects.filter(user=request.user).select_related('category')
+    if query:
+        items = items.filter(Q(name__icontains=query) | Q(description__icontains=query))
+
+    if selected_sort == 'name_az':
+        items = items.order_by('name', '-created_at')
+    elif selected_sort == 'date_oldest':
+        items = items.order_by('created_at')
+    elif selected_sort == 'category_az':
+        items = items.order_by('category__name', '-created_at')
+    elif selected_sort == 'condition_az':
+        items = items.order_by('condition', '-created_at')
+    else:
+        items = items.order_by('-created_at')
+
+    categories = Category.objects.filter(user=request.user)
 
     selected_currency = profile.preferred_currency or 'USD'
     currency_rate = CURRENCY_RATES.get(selected_currency, Decimal('1.00'))
     currency_symbol = CURRENCY_SYMBOLS.get(selected_currency, '$')
 
+    converted_total_purchase = Decimal('0')
+    converted_total_estimated = Decimal('0')
+
     converted_items = []
     for item in items:
-        purchase_converted = (item.purchase_price or Decimal('0')) * currency_rate
-        estimated_converted = (item.estimated_value * currency_rate) if item.estimated_value is not None else None
-        gain_loss_converted = (item.gain_loss * currency_rate) if item.gain_loss is not None else None
+        purchase_converted = convert_amount(item.purchase_price or Decimal('0'), item.currency, selected_currency)
+        estimated_converted = convert_amount(item.estimated_value, item.currency, selected_currency)
+        gain_loss_converted = (estimated_converted - purchase_converted) if estimated_converted is not None else None
+
+        converted_total_purchase += purchase_converted
+        if estimated_converted is not None:
+            converted_total_estimated += estimated_converted
 
         converted_items.append({
             'item': item,
@@ -58,20 +106,57 @@ def home(request):
             'gain_loss_converted': gain_loss_converted,
         })
 
+    if selected_sort == 'purchase_high':
+        converted_items.sort(key=lambda row: row['purchase_converted'], reverse=True)
+    elif selected_sort == 'purchase_low':
+        converted_items.sort(key=lambda row: row['purchase_converted'])
+    elif selected_sort == 'loss_high':
+        converted_items.sort(key=lambda row: row['gain_loss_converted'] if row['gain_loss_converted'] is not None else Decimal('999999'))
+
+    converted_total_gain_loss = converted_total_estimated - converted_total_purchase
+    converted_total_lost = (converted_total_purchase - converted_total_estimated) if converted_total_estimated < converted_total_purchase else Decimal('0')
+
     context = {
         'profile': profile,
         'items': converted_items,
         'item_count': items.count(),
-        'category_count': Category.objects.filter(user=request.user).count(),
-        'total_purchase': total_purchase * currency_rate,
-        'total_estimated': total_estimated * currency_rate,
-        'total_gain_loss': total_gain_loss * currency_rate,
+        'category_count': categories.count(),
+        'selected_sort': selected_sort,
+        'search_query': query,
+        'total_purchase': converted_total_purchase,
+        'total_estimated': converted_total_estimated,
+        'total_gain_loss': converted_total_gain_loss,
+        'total_lost': converted_total_lost,
         'selected_currency': selected_currency,
         'currency_symbol': currency_symbol,
         'currency_choices': Profile.Currency.choices,
         'exchange_rate': currency_rate,
     }
     return render(request, 'tracker/home.html', context)
+
+
+@login_required(login_url='/login/')
+def item_detail_view(request, item_id):
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    item = get_object_or_404(Item.objects.select_related('category'), pk=item_id, user=request.user)
+
+    selected_currency = profile.preferred_currency or 'USD'
+    currency_symbol = CURRENCY_SYMBOLS.get(selected_currency, '$')
+
+    purchase_converted = convert_amount(item.purchase_price or Decimal('0'), item.currency, selected_currency)
+    estimated_converted = convert_amount(item.estimated_value, item.currency, selected_currency)
+    gain_loss_converted = (estimated_converted - purchase_converted) if estimated_converted is not None else None
+
+    context = {
+        'profile': profile,
+        'item': item,
+        'currency_symbol': currency_symbol,
+        'selected_currency': selected_currency,
+        'purchase_converted': purchase_converted,
+        'estimated_converted': estimated_converted,
+        'gain_loss_converted': gain_loss_converted,
+    }
+    return render(request, 'tracker/item_detail.html', context)
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -190,6 +275,7 @@ def profile_view(request):
 
 @login_required(login_url='/login/')
 def category_create_view(request):
+    ensure_default_categories(request.user)
     if request.method == 'POST':
         form = CategoryForm(request.POST)
         if form.is_valid():
@@ -209,22 +295,31 @@ def category_create_view(request):
 
 @login_required(login_url='/login/')
 def item_create_view(request):
+    ensure_default_categories(request.user)
+    profile, _ = Profile.objects.get_or_create(user=request.user)
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             item = form.save(commit=False)
             item.user = request.user
+            item.currency = profile.preferred_currency
             item.save()
             messages.success(request, 'Item added successfully.')
             return redirect('tracker:home')
     else:
         form = ItemForm(user=request.user)
 
-    return render(request, 'tracker/item_form.html', {'form': form, 'is_edit': False})
+    return render(request, 'tracker/item_form.html', {
+        'form': form,
+        'is_edit': False,
+        'active_currency': profile.preferred_currency,
+    })
 
 
 @login_required(login_url='/login/')
 def item_edit_view(request, item_id):
+    ensure_default_categories(request.user)
+    profile, _ = Profile.objects.get_or_create(user=request.user)
     item = get_object_or_404(Item, pk=item_id, user=request.user)
 
     if request.method == 'POST':
@@ -236,7 +331,12 @@ def item_edit_view(request, item_id):
     else:
         form = ItemForm(instance=item, user=request.user)
 
-    return render(request, 'tracker/item_form.html', {'form': form, 'item': item, 'is_edit': True})
+    return render(request, 'tracker/item_form.html', {
+        'form': form,
+        'item': item,
+        'is_edit': True,
+        'active_currency': profile.preferred_currency,
+    })
 
 
 @login_required(login_url='/login/')
@@ -268,3 +368,14 @@ def currency_update_view(request):
     profile.save(update_fields=['preferred_currency'])
     messages.success(request, f'Currency updated to {currency_code}.')
     return redirect('tracker:home')
+
+
+@login_required(login_url='/login/')
+def settings_view(request):
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    context = {
+        'profile': profile,
+        'selected_currency': profile.preferred_currency,
+        'currency_choices': Profile.Currency.choices,
+    }
+    return render(request, 'tracker/settings.html', context)

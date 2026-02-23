@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-900">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Item Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full">
+  <main class="relative isolate flex min-h-screen items-center justify-center overflow-hidden px-6 py-10">
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.25),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.2),transparent_40%)]"></div>
+
+    <section class="w-full max-w-3xl rounded-3xl border border-white/10 bg-gray-900/70 p-8 shadow-2xl shadow-black/40 backdrop-blur sm:p-10">
+      <header class="flex items-center justify-between">
+        <h1 class="text-2xl font-semibold tracking-tight text-white">{{ item.name }}</h1>
+        <a href="{% url 'tracker:home' %}" class="rounded-lg bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">Back</a>
+      </header>
+
+      <div class="mt-6 grid gap-6 sm:grid-cols-2">
+        <div>
+          {% if item.photo %}
+            <img src="{{ item.photo.url }}" alt="{{ item.name }}" class="h-48 w-full rounded-xl border border-white/10 object-cover" />
+          {% else %}
+            <div class="flex h-48 w-full items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm text-gray-400">No image uploaded</div>
+          {% endif %}
+        </div>
+
+        <div class="space-y-3 text-sm">
+          <p><span class="text-gray-400">Category:</span> <span class="text-white">{{ item.category.name|default:'—' }}</span></p>
+          <p><span class="text-gray-400">Condition:</span> <span class="text-white">{{ item.get_condition_display }}</span></p>
+          <p><span class="text-gray-400">Item Currency:</span> <span class="text-white">{{ item.currency }}</span></p>
+          <p><span class="text-gray-400">Purchase Date:</span> <span class="text-white">{{ item.purchase_date|default:'—' }}</span></p>
+          <p><span class="text-gray-400">Purchase Price:</span> <span class="text-white">{{ currency_symbol }}{{ purchase_converted|floatformat:2 }}</span></p>
+          <p><span class="text-gray-400">Estimated Value:</span> <span class="text-white">{% if estimated_converted != None %}{{ currency_symbol }}{{ estimated_converted|floatformat:2 }}{% else %}—{% endif %}</span></p>
+          <p>
+            <span class="text-gray-400">Gain/Loss:</span>
+            {% if gain_loss_converted != None %}
+              <span class="{% if gain_loss_converted < 0 %}text-red-300{% elif gain_loss_converted > 0 %}text-emerald-300{% else %}text-white{% endif %}">{{ currency_symbol }}{{ gain_loss_converted|floatformat:2 }}</span>
+            {% else %}
+              <span class="text-white">—</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <h2 class="text-sm font-medium text-gray-300">Description</h2>
+        <p class="mt-2 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-gray-200">{{ item.description|default:'No notes added.' }}</p>
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-3">
+        <a href="{% url 'tracker:item_edit' item.id %}" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Edit item</a>
+        <a href="{% url 'tracker:item_delete' item.id %}" class="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400">Delete</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

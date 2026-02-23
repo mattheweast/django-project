@@ -48,3 +48,20 @@ class ItemForm(forms.ModelForm):
 
         if user is not None:
             self.fields['category'].queryset = Category.objects.filter(user=user)
+
+    def clean_purchase_price(self):
+        purchase_price = self.cleaned_data.get('purchase_price')
+        if purchase_price is None:
+            raise forms.ValidationError('Purchase price is required.')
+        if purchase_price < 0:
+            raise forms.ValidationError('Purchase price cannot be negative.')
+        return purchase_price
+
+    def clean_estimated_value(self):
+        estimated_value = self.cleaned_data.get('estimated_value')
+        if estimated_value is not None and estimated_value < 0:
+            raise forms.ValidationError('Estimated value cannot be negative.')
+        return estimated_value
+
+    def clean(self):
+        return super().clean()

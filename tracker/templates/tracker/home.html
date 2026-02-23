@@ -9,73 +9,71 @@
 <body class="min-h-screen bg-gray-950 text-white">
   <header class="border-b border-white/10 bg-gray-900/70 backdrop-blur">
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 lg:px-8">
-      <h1 class="text-lg font-semibold tracking-tight">Home</h1>
       <div class="flex items-center gap-4">
-        <a href="{% url 'tracker:profile' %}" class="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-gray-200 hover:border-indigo-400/50 hover:text-white" aria-label="Profile">
-          {% if profile.photo %}
-            <img src="{{ profile.photo.url }}" alt="Profile" class="h-10 w-10 rounded-full object-cover" />
-          {% else %}
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-              <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
-            </svg>
-          {% endif %}
-        </a>
-        <a href="{% url 'tracker:logout' %}" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Logout</a>
+        <a href="{% url 'tracker:item_create' %}" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Add item</a>
+        <p class="text-sm font-semibold text-white">{{ item_count }}</p>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="text-right">
+          <p class="text-sm font-medium text-gray-200">{{ profile.display_name|default:request.user.username }}</p>
+          <p class="text-xs font-semibold">
+            <span class="text-emerald-300">{{ currency_symbol }}{{ total_purchase|floatformat:0 }}</span>
+            <span class="text-gray-500">/</span>
+            <span class="text-red-300">{{ currency_symbol }}{{ total_lost|floatformat:0 }}</span>
+          </p>
+        </div>
+        <div class="relative">
+          <button id="user-menu-button" type="button" class="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-gray-200 hover:border-indigo-400/50 hover:text-white" aria-label="User menu">
+            {% if profile.photo %}
+              <img src="{{ profile.photo.url }}" alt="Profile" class="h-10 w-10 rounded-full object-cover" />
+            {% else %}
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
+              </svg>
+            {% endif %}
+          </button>
+
+          <div id="user-menu" class="absolute right-0 z-20 mt-2 hidden w-44 overflow-hidden rounded-xl border border-white/10 bg-gray-900/95 shadow-xl">
+            <a href="{% url 'tracker:profile' %}" class="block px-4 py-2 text-sm text-gray-200 hover:bg-white/10">Profile</a>
+            <a href="{% url 'tracker:settings' %}" class="block px-4 py-2 text-sm text-gray-200 hover:bg-white/10">Settings</a>
+            <a href="{% url 'tracker:logout' %}" class="block px-4 py-2 text-sm text-red-200 hover:bg-red-500/10">Logout</a>
+          </div>
+        </div>
       </div>
     </div>
   </header>
 
   <main class="mx-auto max-w-6xl px-6 py-10 lg:px-8">
     {% if messages %}
-      <div class="space-y-2">
+      <div id="flash-messages" class="space-y-2">
         {% for message in messages %}
-          <p class="rounded-lg px-3 py-2 text-sm {% if message.tags == 'success' %}border border-emerald-400/30 bg-emerald-500/10 text-emerald-200{% else %}border border-red-400/30 bg-red-500/10 text-red-200{% endif %}">{{ message }}</p>
+          <p class="flash-message rounded-lg px-3 py-2 text-sm transition-opacity duration-500 {% if message.tags == 'success' %}border border-emerald-400/30 bg-emerald-500/10 text-emerald-200{% else %}border border-red-400/30 bg-red-500/10 text-red-200{% endif %}">{{ message }}</p>
         {% endfor %}
       </div>
     {% endif %}
 
-    <section class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <article class="rounded-2xl border border-white/10 bg-gray-900/70 p-4">
-        <p class="text-xs uppercase tracking-wide text-gray-400">Items</p>
-        <p class="mt-2 text-2xl font-semibold">{{ item_count }}</p>
-      </article>
-      <article class="rounded-2xl border border-white/10 bg-gray-900/70 p-4">
-        <p class="text-xs uppercase tracking-wide text-gray-400">Categories</p>
-        <p class="mt-2 text-2xl font-semibold">{{ category_count }}</p>
-      </article>
-      <article class="rounded-2xl border border-white/10 bg-gray-900/70 p-4">
-        <p class="text-xs uppercase tracking-wide text-gray-400">Total Purchase</p>
-        <p class="mt-2 text-2xl font-semibold">{{ currency_symbol }}{{ total_purchase|floatformat:2 }}</p>
-      </article>
-      <article class="rounded-2xl border border-white/10 bg-gray-900/70 p-4">
-        <p class="text-xs uppercase tracking-wide text-gray-400">Potential Gain/Loss</p>
-        <p class="mt-2 text-2xl font-semibold {% if total_gain_loss < 0 %}text-red-300{% elif total_gain_loss > 0 %}text-emerald-300{% else %}text-white{% endif %}">
-          {{ currency_symbol }}{{ total_gain_loss|floatformat:2 }}
-        </p>
-      </article>
-    </section>
-
-    <section class="mt-6 rounded-2xl border border-white/10 bg-gray-900/70 p-4">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p class="text-sm font-medium text-white">Display Currency</p>
-          <p class="text-xs text-gray-400">Values are converted using rate 1 USD = {{ exchange_rate }} {{ selected_currency }}.</p>
+    <section class="mt-6 rounded-xl border border-white/10 bg-gray-900/40 p-3">
+      <form method="get" class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div class="w-full sm:max-w-xl">
+          <label for="q" class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400">Search Items</label>
+          <input id="q" name="q" value="{{ search_query }}" placeholder="Search item name or notes" class="block w-full rounded-md border border-white/10 bg-white/0 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-400 focus:outline-none" />
         </div>
-        <form method="post" action="{% url 'tracker:currency_update' %}" class="flex items-center gap-2">
-          {% csrf_token %}
-          <select name="currency" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none">
-            {% for code, label in currency_choices %}
-              <option value="{{ code }}" {% if code == selected_currency %}selected{% endif %} class="bg-gray-900 text-white">{{ label }}</option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Update</button>
-        </form>
-      </div>
-    </section>
 
-    <section class="mt-8 flex flex-wrap items-center gap-3">
-      <a href="{% url 'tracker:item_create' %}" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Add item</a>
-      <a href="{% url 'tracker:category_create' %}" class="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">Add category</a>
+        <div class="w-full sm:w-64">
+          <label for="sort" class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400">Sort</label>
+          <select id="sort" name="sort" onchange="this.form.submit()" class="block w-full rounded-md border border-white/10 bg-white/0 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none">
+            <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %} class="bg-gray-900">Date: newest</option>
+            <option value="date_oldest" {% if selected_sort == 'date_oldest' %}selected{% endif %} class="bg-gray-900">Date: oldest</option>
+            <option value="purchase_high" {% if selected_sort == 'purchase_high' %}selected{% endif %} class="bg-gray-900">Purchase: highest</option>
+            <option value="purchase_low" {% if selected_sort == 'purchase_low' %}selected{% endif %} class="bg-gray-900">Purchase: lowest</option>
+            <option value="loss_high" {% if selected_sort == 'loss_high' %}selected{% endif %} class="bg-gray-900">Loss: highest</option>
+            <option value="name_az" {% if selected_sort == 'name_az' %}selected{% endif %} class="bg-gray-900">Name: A-Z</option>
+            <option value="category_az" {% if selected_sort == 'category_az' %}selected{% endif %} class="bg-gray-900">Category: A-Z</option>
+            <option value="condition_az" {% if selected_sort == 'condition_az' %}selected{% endif %} class="bg-gray-900">Condition: A-Z</option>
+          </select>
+        </div>
+      </form>
     </section>
 
     <section class="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-gray-900/70">
@@ -110,6 +108,7 @@
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-3">
+                    <a href="{% url 'tracker:item_detail' row.item.id %}" class="text-sky-300 hover:text-sky-200">View</a>
                     <a href="{% url 'tracker:item_edit' row.item.id %}" class="text-indigo-300 hover:text-indigo-200">Edit</a>
                     <a href="{% url 'tracker:item_delete' row.item.id %}" class="text-red-300 hover:text-red-200">Delete</a>
                   </div>
@@ -118,7 +117,15 @@
             {% empty %}
               <tr>
                 <td colspan="6" class="px-4 py-10 text-center text-gray-400">
-                  No items yet. Add your first item to start tracking what you own.
+                  <p class="font-medium text-white">No items match your current view.</p>
+                  {% if search_query %}
+                    <p class="mt-1">Try clearing filters, then add your next item.</p>
+                  {% else %}
+                    <p class="mt-1">Start by adding your first item and using categories like Electronics or Furniture.</p>
+                  {% endif %}
+                  <div class="mt-4 flex justify-center gap-2">
+                    <a href="{% url 'tracker:item_create' %}" class="rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Add first item</a>
+                  </div>
                 </td>
               </tr>
             {% endfor %}
@@ -127,5 +134,31 @@
       </div>
     </section>
   </main>
+
+  <script>
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+
+    userMenuButton?.addEventListener('click', function () {
+      userMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!userMenu || !userMenuButton) return;
+      if (!userMenu.contains(event.target) && !userMenuButton.contains(event.target)) {
+        userMenu.classList.add('hidden');
+      }
+    });
+
+    const flashMessages = document.querySelectorAll('.flash-message');
+    if (flashMessages.length) {
+      setTimeout(() => {
+        flashMessages.forEach((message) => {
+          message.classList.add('opacity-0');
+          setTimeout(() => message.remove(), 500);
+        });
+      }, 3500);
+    }
+  </script>
 </body>
 </html>

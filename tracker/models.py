@@ -50,6 +50,7 @@ class Item(models.Model):
 	name = models.CharField(max_length=200)
 	description = models.TextField(blank=True)
 	condition = models.CharField(max_length=20, choices=Condition.choices, default=Condition.GOOD)
+	currency = models.CharField(max_length=3, choices=Profile.Currency.choices, default=Profile.Currency.USD)
 	purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
 	estimated_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 	purchase_date = models.DateField(null=True, blank=True)

@@ -13,6 +13,7 @@
     <section class="w-full max-w-3xl rounded-3xl border border-white/10 bg-gray-900/70 p-8 shadow-2xl shadow-black/40 backdrop-blur sm:p-10">
       <h1 class="text-2xl font-semibold tracking-tight text-white">{% if is_edit %}Edit item{% else %}Add new item{% endif %}</h1>
       <p class="mt-2 text-sm text-gray-300">Track what you own and its value over time.</p>
+      <p class="mt-1 text-xs text-indigo-300">New items will use your Settings currency: {{ active_currency }}</p>
 
       <form method="post" enctype="multipart/form-data" class="mt-8 grid gap-5 sm:grid-cols-2">
         {% csrf_token %}
@@ -40,6 +41,7 @@
         <div>
           <label for="id_estimated_value" class="block text-sm font-medium text-gray-200">Estimated current value</label>
           {{ form.estimated_value }}
+          <p class="mt-1 text-xs text-gray-400">Optional, but needed for gain/loss tracking on your dashboard.</p>
         </div>
 
         <div>

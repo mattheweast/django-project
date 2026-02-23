@@ -11,9 +11,11 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
+    path('settings/', views.settings_view, name='settings'),
     path('categories/new/', views.category_create_view, name='category_create'),
     path('currency/update/', views.currency_update_view, name='currency_update'),
     path('items/new/', views.item_create_view, name='item_create'),
+    path('items/<int:item_id>/', views.item_detail_view, name='item_detail'),
     path('items/<int:item_id>/edit/', views.item_edit_view, name='item_edit'),
     path('items/<int:item_id>/delete/', views.item_delete_view, name='item_delete'),
     path(
