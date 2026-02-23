@@ -1,0 +1,18 @@
+# Core Framework
+Django>=5.0,<6.0
+
+# Environment Variables (for .env files)
+django-environ>=0.11.0
+
+# Database (PostgreSQL support)
+psycopg2-binary>=2.9.0
+
+# Production Server & Static Files
+gunicorn>=21.0.0
+whitenoise>=6.0.0
+
+# Image Handling (Optional, if using ImageField)
+Pillow>=10.0.0
+
+# Development Tools (Optional)
+django-debug-toolbar>=4.0.0
