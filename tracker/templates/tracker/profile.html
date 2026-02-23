@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-900">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full">
+  <main class="relative isolate flex min-h-screen items-center justify-center overflow-hidden">
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.25),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(236,72,153,0.2),transparent_40%)]"></div>
+
+    <div class="mx-auto w-full max-w-4xl px-6 py-10 lg:px-8">
+      <div class="overflow-hidden rounded-3xl border border-white/10 bg-gray-900/70 shadow-2xl shadow-black/40 backdrop-blur">
+        <header class="flex items-center justify-between border-b border-white/10 px-6 py-4 sm:px-8">
+          <h1 class="text-xl font-semibold tracking-tight text-white">Profile</h1>
+          <a href="{% url 'tracker:home' %}" class="rounded-lg bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">Back to Home</a>
+        </header>
+
+        <section class="p-6 sm:p-8">
+          {% if messages %}
+            <div class="mb-5 space-y-2">
+              {% for message in messages %}
+                <p class="rounded-lg px-3 py-2 text-sm {% if message.tags == 'success' %}border border-emerald-400/30 bg-emerald-500/10 text-emerald-200{% else %}border border-red-400/30 bg-red-500/10 text-red-200{% endif %}">{{ message }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="flex items-center gap-4">
+              {% if profile.photo %}
+                <img src="{{ profile.photo.url }}" alt="Profile photo" class="h-20 w-20 rounded-full border border-white/10 object-cover" />
+              {% else %}
+                <div class="flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-8 w-8">
+                    <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              {% endif %}
+
+              <div class="w-full">
+                <label for="photo" class="block text-sm font-medium text-gray-200">Profile photo</label>
+                <input id="photo" name="photo" type="file" accept="image/*" class="mt-2 block w-full text-sm text-gray-200 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-500 file:px-3 file:py-2 file:font-semibold file:text-white hover:file:bg-indigo-400" />
+              </div>
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label for="display_name" class="block text-sm font-medium text-gray-200">Display name</label>
+                <input id="display_name" name="display_name" type="text" value="{{ profile.display_name|default:'' }}" class="mt-2 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40" placeholder="How your name appears" />
+              </div>
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-200">Email</label>
+                <input id="email" name="email" type="email" value="{{ request.user.email|default:'' }}" class="mt-2 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40" />
+              </div>
+              <div>
+                <label for="first_name" class="block text-sm font-medium text-gray-200">First name</label>
+                <input id="first_name" name="first_name" type="text" value="{{ request.user.first_name|default:'' }}" class="mt-2 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40" />
+              </div>
+              <div>
+                <label for="last_name" class="block text-sm font-medium text-gray-200">Last name</label>
+                <input id="last_name" name="last_name" type="text" value="{{ request.user.last_name|default:'' }}" class="mt-2 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40" />
+              </div>
+            </div>
+
+            <div>
+              <label for="bio" class="block text-sm font-medium text-gray-200">Bio</label>
+              <textarea id="bio" name="bio" rows="4" class="mt-2 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40" placeholder="Tell us a little about yourself">{{ profile.bio|default:'' }}</textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
+              <a href="{% url 'tracker:home' %}" class="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">Cancel</a>
+              <button type="submit" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Save profile</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

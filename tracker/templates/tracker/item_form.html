@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-900">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% if is_edit %}Edit Item{% else %}Add Item{% endif %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full">
+  <main class="relative isolate flex min-h-screen items-center justify-center overflow-hidden px-6 py-10">
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.25),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.2),transparent_40%)]"></div>
+
+    <section class="w-full max-w-3xl rounded-3xl border border-white/10 bg-gray-900/70 p-8 shadow-2xl shadow-black/40 backdrop-blur sm:p-10">
+      <h1 class="text-2xl font-semibold tracking-tight text-white">{% if is_edit %}Edit item{% else %}Add new item{% endif %}</h1>
+      <p class="mt-2 text-sm text-gray-300">Track what you own and its value over time.</p>
+
+      <form method="post" enctype="multipart/form-data" class="mt-8 grid gap-5 sm:grid-cols-2">
+        {% csrf_token %}
+
+        <div class="sm:col-span-2">
+          <label for="id_name" class="block text-sm font-medium text-gray-200">Item name</label>
+          <input id="id_name" name="name" type="text" value="{{ form.name.value|default:'' }}" required class="mt-2 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </div>
+
+        <div>
+          <label for="id_category" class="block text-sm font-medium text-gray-200">Category</label>
+          {{ form.category }}
+        </div>
+
+        <div>
+          <label for="id_condition" class="block text-sm font-medium text-gray-200">Condition</label>
+          {{ form.condition }}
+        </div>
+
+        <div>
+          <label for="id_purchase_price" class="block text-sm font-medium text-gray-200">Purchase price</label>
+          {{ form.purchase_price }}
+        </div>
+
+        <div>
+          <label for="id_estimated_value" class="block text-sm font-medium text-gray-200">Estimated current value</label>
+          {{ form.estimated_value }}
+        </div>
+
+        <div>
+          <label for="id_purchase_date" class="block text-sm font-medium text-gray-200">Purchase date</label>
+          {{ form.purchase_date }}
+        </div>
+
+        <div>
+          <label for="id_photo" class="block text-sm font-medium text-gray-200">Item photo</label>
+          {{ form.photo }}
+        </div>
+
+        <div class="sm:col-span-2">
+          <label for="id_description" class="block text-sm font-medium text-gray-200">Description</label>
+          {{ form.description }}
+        </div>
+
+        {% if form.errors %}
+          <div class="sm:col-span-2 space-y-2">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <p class="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{{ error }}</p>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="sm:col-span-2 flex items-center justify-end gap-3">
+          <a href="{% url 'tracker:home' %}" class="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">Cancel</a>
+          <button type="submit" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400">{% if is_edit %}Save changes{% else %}Add item{% endif %}</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

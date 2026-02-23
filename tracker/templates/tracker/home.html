@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-950 text-white">
+  <header class="border-b border-white/10 bg-gray-900/70 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 lg:px-8">
+      <h1 class="text-lg font-semibold tracking-tight">Home</h1>
+      <div class="flex items-center gap-4">
+        <a href="{% url 'tracker:profile' %}" class="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-gray-200 hover:border-indigo-400/50 hover:text-white" aria-label="Profile">
+          {% if profile.photo %}
+            <img src="{{ profile.photo.url }}" alt="Profile" class="h-10 w-10 rounded-full object-cover" />
+          {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+              <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
+            </svg>
+          {% endif %}
+        </a>
+        <a href="{% url 'tracker:logout' %}" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-6 py-10 lg:px-8">
+    {% if messages %}
+      <div class="space-y-2">
+        {% for message in messages %}
+          <p class="rounded-lg px-3 py-2 text-sm {% if message.tags == 'success' %}border border-emerald-400/30 bg-emerald-500/10 text-emerald-200{% else %}border border-red-400/30 bg-red-500/10 text-red-200{% endif %}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <section class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <article class="rounded-2xl border border-white/10 bg-gray-900/70 p-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400">Items</p>
+        <p class="mt-2 text-2xl font-semibold">{{ item_count }}</p>
+      </article>
+      <article class="rounded-2xl border border-white/10 bg-gray-900/70 p-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400">Categories</p>
+        <p class="mt-2 text-2xl font-semibold">{{ category_count }}</p>
+      </article>
+      <article class="rounded-2xl border border-white/10 bg-gray-900/70 p-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400">Total Purchase</p>
+        <p class="mt-2 text-2xl font-semibold">{{ currency_symbol }}{{ total_purchase|floatformat:2 }}</p>
+      </article>
+      <article class="rounded-2xl border border-white/10 bg-gray-900/70 p-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400">Potential Gain/Loss</p>
+        <p class="mt-2 text-2xl font-semibold {% if total_gain_loss < 0 %}text-red-300{% elif total_gain_loss > 0 %}text-emerald-300{% else %}text-white{% endif %}">
+          {{ currency_symbol }}{{ total_gain_loss|floatformat:2 }}
+        </p>
+      </article>
+    </section>
+
+    <section class="mt-6 rounded-2xl border border-white/10 bg-gray-900/70 p-4">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p class="text-sm font-medium text-white">Display Currency</p>
+          <p class="text-xs text-gray-400">Values are converted using rate 1 USD = {{ exchange_rate }} {{ selected_currency }}.</p>
+        </div>
+        <form method="post" action="{% url 'tracker:currency_update' %}" class="flex items-center gap-2">
+          {% csrf_token %}
+          <select name="currency" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none">
+            {% for code, label in currency_choices %}
+              <option value="{{ code }}" {% if code == selected_currency %}selected{% endif %} class="bg-gray-900 text-white">{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Update</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="mt-8 flex flex-wrap items-center gap-3">
+      <a href="{% url 'tracker:item_create' %}" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Add item</a>
+      <a href="{% url 'tracker:category_create' %}" class="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">Add category</a>
+    </section>
+
+    <section class="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-gray-900/70">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-white/10 text-sm">
+          <thead class="bg-white/5 text-left text-gray-300">
+            <tr>
+              <th class="px-4 py-3 font-medium">Item</th>
+              <th class="px-4 py-3 font-medium">Category</th>
+              <th class="px-4 py-3 font-medium">Purchase</th>
+              <th class="px-4 py-3 font-medium">Est. Value</th>
+              <th class="px-4 py-3 font-medium">Gain/Loss</th>
+              <th class="px-4 py-3 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/10">
+            {% for row in items %}
+              <tr>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-white">{{ row.item.name }}</p>
+                  <p class="text-xs text-gray-400">{{ row.item.get_condition_display }}</p>
+                </td>
+                <td class="px-4 py-3 text-gray-300">{{ row.item.category.name|default:'—' }}</td>
+                <td class="px-4 py-3 text-gray-300">{{ currency_symbol }}{{ row.purchase_converted|floatformat:2 }}</td>
+                <td class="px-4 py-3 text-gray-300">{% if row.estimated_converted != None %}{{ currency_symbol }}{{ row.estimated_converted|floatformat:2 }}{% else %}—{% endif %}</td>
+                <td class="px-4 py-3 {% if row.gain_loss_converted != None and row.gain_loss_converted < 0 %}text-red-300{% elif row.gain_loss_converted != None and row.gain_loss_converted > 0 %}text-emerald-300{% else %}text-gray-300{% endif %}">
+                  {% if row.gain_loss_converted != None %}
+                    {{ currency_symbol }}{{ row.gain_loss_converted|floatformat:2 }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-3">
+                    <a href="{% url 'tracker:item_edit' row.item.id %}" class="text-indigo-300 hover:text-indigo-200">Edit</a>
+                    <a href="{% url 'tracker:item_delete' row.item.id %}" class="text-red-300 hover:text-red-200">Delete</a>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" class="px-4 py-10 text-center text-gray-400">
+                  No items yet. Add your first item to start tracking what you own.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
